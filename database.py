@@ -1,3 +1,5 @@
+from email.policy import default
+
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 
@@ -20,7 +22,12 @@ class Transaction(db.Model):
     amount = db.Column(db.Float, nullable=False)
     type = db.Column(db.String(10), nullable=False)
     description = db.Column(db.String(200))
-    date = db.Column(db.DateTime, default=datetime.utcnow)
+    transaction_date = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+
+
 
