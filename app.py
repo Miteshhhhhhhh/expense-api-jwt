@@ -97,9 +97,68 @@ def get_transactions():
     transactions = Transaction.query.filter_by(user_id=current_user_id).all()
     return jsonify([{"amount": t.amount, "type": t.type, "description": t.description, "date": t.transaction_date} for t in transactions]), 200
 
+@app.route('/transactions/<int:id>', methods=['PUT'])
+@jwt_required()
+def update_transactions(id):
+    current_user_id = int(get_jwt_identity())
+    edit = Transaction.query.filter_by(id=id).first()
+    if not edit:
+        return {"error": "Transactions not found"}, 404
+
+    if edit.user_id != current_user_id:
+        return {"error": "Forbidden"}, 403
+
+    data = request.get_json()
+    edit.amount = data.get('amount', edit.amount)
+    edit.type = data.get('type', edit.type)
+    edit.category_id = data.get('category_id', edit.category_id)
+    edit.description = data.get('description', edit.description)
+    edit.transaction_date = data.get('transaction_date', edit.transaction_date)
+
+    db.session.commit()
+    return jsonify({
+        "id": edit.id,
+        "amount": edit.amount,
+        "type": edit.type,
+        "description": edit.description,
+        "date": str(edit.transaction_date)
+    }), 200
+
+@app.route('/transactions/<int:id>', methods=['DELETE'])
+@jwt_required()
+def delete_transactions(id):
+    current_user_id = int(get_jwt_identity())
+    delete = Transaction.query.filter_by(id=id).first()
+
+    if not delete:
+        return {"error": "Transaction not found"}, 404
+
+    if delete.user_id != current_user_id:
+        return {"error": "Forbidden"}, 403
+
+    db.session.delete(delete)
+    db.session.commit()
+    return {"message": "Delete Successfully"}, 200
+
+@app.route('/summary', methods=['GET'])
+@jwt_required()
+def transaction_summary():
+    current_user_id = get_jwt_identity()
+    income_sum = db.session.query(db.func.sum(Transaction.amount)).filter_by(user_id=current_user_id, type="Income").scalar()
+    expense_sum = db.session.query(db.func.sum(Transaction.amount)).filter_by(user_id=current_user_id, type="Expense").scalar()
+
+    total_income = income_sum or 0
+    total_expense = expense_sum or 0
+    balance = total_income - total_expense
+    return jsonify({
+        "Total Income" : total_income,
+        "Total Expense": total_expense,
+        "Balance": balance
+    }), 200
+
 if __name__ == '__main__':
     with app.app_context():
-        db.create_all()
-    app.run(debug=True)
+     db.create_all()
+     app.run(debug=True)
 
 
