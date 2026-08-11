@@ -10,7 +10,6 @@ Flask + SQLAlchemy + JWT based backend for Personal Expense Tracker.
 - Summary Endpoint: Get total income, total expense, and balance for logged-in user
 
 ## Transactions
-
 POST /transactions - Create new transaction. Auth required
 
 GET /transactions - Get all user transactions. Auth required
