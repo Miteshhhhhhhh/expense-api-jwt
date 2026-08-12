@@ -144,14 +144,28 @@ def delete_transactions(id):
 @jwt_required()
 def transaction_summary():
     current_user_id = get_jwt_identity()
-    income_sum = db.session.query(db.func.sum(Transaction.amount)).filter_by(user_id=current_user_id, type="Income").scalar()
-    expense_sum = db.session.query(db.func.sum(Transaction.amount)).filter_by(user_id=current_user_id, type="Expense").scalar()
+    month = request.args.get("month")
+    year = request.args.get("year")
+
+    if month and year:
+        month = int(month)
+        year = int(year)
+        income_sum = db.session.query(db.func.sum(Transaction.amount)).filter(Transaction.user_id==current_user_id, Transaction.type=="Income",
+                                                                          db.func.extract("month", Transaction.created_at) == int(month),
+                                                                          db.func.extract("year", Transaction.created_at) == int(year)).scalar()
+
+        expense_sum = db.session.query(db.func.sum(Transaction.amount)).filter(Transaction.user_id==current_user_id, Transaction.type=="Expense",
+                                                                           db.func.extract("month", Transaction.created_at) == int(month),
+                                                                           db.func.extract("year", Transaction.created_at) == int(year)).scalar()
+    else:
+        income_sum = db.session.query(db.func.sum(Transaction.amount)).filter_by(user_id=current_user_id, type="Income").scalar()
+        expense_sum = db.session.query(db.func.sum(Transaction.amount)).filter_by(user_id=current_user_id, type="Expense").scalar()
 
     total_income = income_sum or 0
     total_expense = expense_sum or 0
     balance = total_income - total_expense
     return jsonify({
-        "Total Income" : total_income,
+        "Total Income": total_income,
         "Total Expense": total_expense,
         "Balance": balance
     }), 200
