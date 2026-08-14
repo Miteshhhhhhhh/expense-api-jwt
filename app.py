@@ -37,22 +37,20 @@ def categories():
     data = request.get_json()
     current_user_id = get_jwt_identity()
     name = data.get('name')
-    type = data.get('type')
-    if not name or not type:
-        return {"error": "Name & Type are required"}, 409
+    if not name:
+        return {"error": "Name is required"}, 409
 
     category = Category.query.filter_by(name=name, user_id=current_user_id).first()
     if category:
         return {"error": "Category already exists"}, 400
 
-    new_category = Category(name=name, type=type, user_id=current_user_id)
+    new_category = Category(name=name, user_id=current_user_id)
     db.session.add(new_category)
     db.session.commit()
     return {
         "message": "Category created",
         "id": new_category.id,
         "name": new_category.name,
-        "type": new_category.type
     }, 201
 
 @app.route('/categories', methods=['GET'])
@@ -60,7 +58,7 @@ def categories():
 def get_categories():
     current_user_id = get_jwt_identity()
     categories = Category.query.filter_by(user_id=current_user_id).all()
-    return jsonify([{"id": c.id, "name": c.name, "type": c.type, "user_id": c.user_id} for c in categories]), 200
+    return jsonify([{"id": c.id, "name": c.name, "user_id": c.user_id} for c in categories]), 200
 
 @app.route('/transactions', methods=['POST'])
 @jwt_required()
@@ -94,8 +92,18 @@ def add_transactions():
 @jwt_required()
 def get_transactions():
     current_user_id = get_jwt_identity()
-    transactions = Transaction.query.filter_by(user_id=current_user_id).all()
-    return jsonify([{"amount": t.amount, "type": t.type, "description": t.description, "date": t.transaction_date} for t in transactions]), 200
+    type = request.args.get("type")
+    category_id = request.args.get("category_id")
+
+
+    query = Transaction.query.filter_by(user_id=current_user_id)
+    if type:
+        query = query.filter(Transaction.type == type)
+    if category_id:
+        query = query.filter(Transaction.category_id == int(category_id))
+
+    transactions = query.all()
+    return jsonify([{"amount": t.amount, "type": t.type, "category_id": t.category_id, "description": t.description, "date": t.transaction_date} for t in transactions]), 200
 
 @app.route('/transactions/<int:id>', methods=['PUT'])
 @jwt_required()
@@ -169,6 +177,27 @@ def transaction_summary():
         "Total Expense": total_expense,
         "Balance": balance
     }), 200
+
+@app.route('/summary/category', methods=['GET'])
+@jwt_required()
+def category_summary():
+    current_user_id = get_jwt_identity()
+    month = request.args.get("month")
+    year = request.args.get("year")
+
+    if month and year:
+        month = int(month)
+        year = int(year)
+
+    expense_result = db.session.query(Transaction.category_id, Category.name, db.func.sum(Transaction.amount)).join(Category).filter(Transaction.user_id==current_user_id,
+                                                                                                                Transaction.type=="Expense",
+                                             db.func.extract('month', Transaction.created_at) == int(month),
+                                             db.func.extract('year', Transaction.created_at) == int(year)).group_by(Category.name)
+
+    result = []
+    for category_id ,name, total in expense_result:
+            result.append({"category_id": category_id,"category": name, "total": total})
+    return jsonify(result)
 
 if __name__ == '__main__':
     with app.app_context():
