@@ -13,6 +13,10 @@ app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
 db.init_app(app)
 jwt = JWTManager(app)
 
+@app.route('/')
+def home():
+    return {"message": "API is Live! Use /register and /login"}
+
 @app.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
