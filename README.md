@@ -1,7 +1,7 @@
 # Expense Tracker API
 
 Flask + SQLAlchemy + JWT based backend for Personal Expense Tracker.
-> 🚀 Live: Coming Soon (Render deployment pending)
+> 🚀 Live: https://expense-api-jwt.onrender.com
 
 ## Features Done
 - **User Auth:** Registration & Login with JWT
@@ -52,7 +52,11 @@ Flask, Flask-SQLAlchemy, Flask-JWT-Extended, SQLite, gunicorn
 3. Install dependencies
    `pip install -r requirements.txt`
 
-4. Run
+4. Create .env (local only)
+   DATABASE_URL=sqlite:///finance.db
+   JWT_SECRET_KEY=your_super_secret_key_here
+
+6. Run
    `python app.py`
    API runs on `http://127.0.0.1:5000`
 
