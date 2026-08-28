@@ -3,11 +3,12 @@ from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
 from database import db, Category, Transaction
 from auth import register_user, login_user
 from datetime import timedelta
+import os
 
 app = Flask(__name__)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///finance.db'
-app.config['JWT_SECRET_KEY'] = 'super-secret-key-change-karna'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///finance.db')
+app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'super-secret-key-change-karna')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
 db.init_app(app)
 jwt = JWTManager(app)
@@ -202,6 +203,8 @@ def category_summary():
 if __name__ == '__main__':
     with app.app_context():
      db.create_all()
-     app.run(debug=True)
+     app.run(debug=False)
+
+
 
 
