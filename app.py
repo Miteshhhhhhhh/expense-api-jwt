@@ -103,7 +103,7 @@ def get_transactions():
         query = query.filter(Transaction.category_id == int(category_id))
 
     transactions = query.all()
-    return jsonify([{"amount": t.amount, "type": t.type, "category_id": t.category_id, "description": t.description, "date": t.transaction_date} for t in transactions]), 200
+    return jsonify([{"amount": t.amount, "type": t.type, "id": t.id, "user_id": t.user_id, "category_id": t.category_id, "description": t.description, "date": t.transaction_date} for t in transactions]), 200
 
 @app.route('/transactions/<int:id>', methods=['PUT'])
 @jwt_required()
