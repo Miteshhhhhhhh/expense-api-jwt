@@ -74,8 +74,14 @@ def add_transactions():
     data = request.get_json()
 
     amount = data.get('amount')
-    if not amount or amount <=0:
+    if not amount:
         return {"error": "Enter The Amount"}
+    try:
+        amount = float(amount)
+    except:
+        return jsonify({"error": "Amount must be a number"}), 400
+    if amount <=0:
+        return jsonify({"error": "Amount must be greater than 0"}), 400
 
     type = data.get('type')
     if type not in ['Income', 'Expense']:
@@ -192,9 +198,15 @@ def category_summary():
     month = request.args.get("month")
     year = request.args.get("year")
 
-    if month and year:
+    if not month or not year:
+        return jsonify({"error": "month & year required"}), 400
+    try:
         month = int(month)
         year = int(year)
+        if month <1 or month >12:
+            return jsonify({"error": "Invalid month"}), 400
+    except:
+        return jsonify({"error": "month & year must be numbers"}), 400
 
     expense_result = db.session.query(Transaction.category_id, Category.name, db.func.sum(Transaction.amount)).join(Category).filter(Transaction.user_id==current_user_id,
                                                                                                                 Transaction.type=="Expense",
@@ -208,8 +220,5 @@ def category_summary():
 
 if __name__ == '__main__':
      app.run(debug=False)
-
-
-
 
 
