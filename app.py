@@ -12,6 +12,8 @@ app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'super-secret-key-cha
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
 db.init_app(app)
 jwt = JWTManager(app)
+with app.app_context():
+    db.create_all()
 
 @app.route('/')
 def home():
@@ -205,9 +207,8 @@ def category_summary():
     return jsonify(result)
 
 if __name__ == '__main__':
-    with app.app_context():
-     db.create_all()
      app.run(debug=False)
+
 
 
 
