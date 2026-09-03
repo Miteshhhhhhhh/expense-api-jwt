@@ -4,6 +4,7 @@ from database import db, Category, Transaction
 from auth import register_user, login_user
 from datetime import timedelta
 import os
+import requests
 
 app = Flask(__name__)
 
@@ -14,6 +15,19 @@ db.init_app(app)
 jwt = JWTManager(app)
 with app.app_context():
     db.create_all()
+
+def get_converted_amount(amount, target_currency):
+    if not target_currency or target_currency.upper() == "USD":
+        return amount, 1
+
+    try:
+        url = f"https://api.frankfurter.dev/v1/latest?from=USD&to={target_currency.upper()}"
+        response = requests.get(url, timeout=5).json()
+        rate = response['rates'][target_currency.upper()]
+        return amount * rate, rate
+    except Exception as e:
+        print("Conversion Error:", e)
+        return amount, None
 
 @app.route('/')
 def home():
@@ -185,11 +199,25 @@ def transaction_summary():
     total_income = income_sum or 0
     total_expense = expense_sum or 0
     balance = total_income - total_expense
+
+    target_currency = request.args.get('currency', 'USD')
+    converted_income, rate = get_converted_amount(total_income, target_currency)
+    converted_expense, _ = get_converted_amount(total_expense, target_currency)
+    converted_balance, _ = get_converted_amount(balance, target_currency)
+
     return jsonify({
         "Total Income": total_income,
         "Total Expense": total_expense,
-        "Balance": balance
+        "Balance": balance,
+        "Converted": {
+            "currency": target_currency.upper(),
+            "rate_used": rate,
+            "Total Income": round(converted_income, 2),
+            "Total Expense": round(converted_expense, 2),
+            "Balance": round(converted_balance, 2)
+        }
     }), 200
+
 
 @app.route('/summary/category', methods=['GET'])
 @jwt_required()
@@ -214,11 +242,33 @@ def category_summary():
                                              db.func.extract('year', Transaction.created_at) == int(year)).group_by(Category.name)
 
     result = []
-    for category_id ,name, total in expense_result:
-            result.append({"category_id": category_id,"category": name, "total": total})
+    target_currency = request.args.get('currency', 'USD')
+    converted_rate = None
+    if target_currency.upper() != "USD":
+        try:
+            url = f"https://api.frankfurter.dev/v1/latest?from=USD&to={target_currency.upper()}"
+            resp = requests.get(url, timeout=5).json()
+            converted_rate = resp['rates'][target_currency.upper()]
+        except:
+            converted_rate = None
+
+    result = []
+    for category_id, name, total in expense_result:
+        converted_total = total * converted_rate if converted_rate else total
+        result.append({
+            "category_id": category_id,
+            "category": name,
+            "total": total,
+            "converted_total": round(converted_total, 2),
+            "currency": target_currency.upper(),
+            "rate": converted_rate or 1
+        })
+
     return jsonify(result)
 
 if __name__ == '__main__':
      app.run(debug=False)
+
+
 
 
