@@ -4,6 +4,8 @@ Flask + SQLAlchemy + JWT based backend for Personal Expense Tracker.
 > 🚀 Live: https://expense-api-jwt.onrender.com
 
 ## Features Done
+- **Multi-Currency Support (NEW): Live currency conversion via Frankfurter API**
+- **External API Integration: Integrated 3rd party exchange rate API with optimized single-call per request**
 - **User Auth:** Registration & Login with JWT
 - **Protected Routes:** All routes require JWT Token
 - **Categories CRUD:** Create, Get categories with type expense/income + User Isolation
@@ -34,12 +36,15 @@ Flask + SQLAlchemy + JWT based backend for Personal Expense Tracker.
 - `DELETE /transactions/<id>` - Delete transaction (owner only)
 
 ### Summary (Auth Required)
-- `GET /summary` - Get income, expense, balance
-- `GET /summary?month=8&year=2026` - Monthly/yearly summary
-- `GET /summary?category_id=1` - Category-wise summary
+* `GET /summary` - Get income, expense, balance
+* `GET /summary?month=8&year=2026` - Monthly/yearly summary
+* `GET /summary/category?month=09&year=2026` - Category-wise summary
+* `GET /summary?currency=INR` - **Live conversion to INR (NEW)**
+* `GET /summary/category?month=09&year=2026&currency=EUR` - **Category summary with live EUR conversion (NEW)**
+* Supports: USD, INR, EUR, JPY, GBP, etc. - Live rates via https://api.frankfurter.dev
 
 ## Tech Stack
-Flask, Flask-SQLAlchemy, Flask-JWT-Extended, SQLite, gunicorn
+Flask, Flask-SQLAlchemy, Flask-JWT-Extended, SQLite, gunicorn, **requests, Frankfurter API**
 
 ## How to Run
 
